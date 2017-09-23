@@ -1,8 +1,8 @@
 # VagrantGUI
-**This project is a work in progess. Please don't use it yet.**
+**This project is a work in progress. Please don't use it yet.**
 
 ## Goal
-Create a simple cross-plattform GUI to Vagrant, that:
+Create a simple cross-platform GUI to Vagrant, that:
 
 - lists all Vagrant boxes
 - starts, stops, suspends and resumes boxes
