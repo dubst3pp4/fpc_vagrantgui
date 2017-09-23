@@ -1,0 +1,6 @@
+/backup
+/bin
+/lib
+**/*.lps
+**/tags
+**/tags.*
