@@ -5,7 +5,7 @@ unit vagrantcommands;
 interface
 
 uses
-  Classes, SysUtils, Process;
+  Classes, SysUtils;
 
 type
 
@@ -13,7 +13,7 @@ type
   {< Interface for all executable commands }
     ['{0CA93471-2F58-445F-8AA5-26F1604B8F45}']
     { execute the command }
-    procedure execute(params: array of string);
+    procedure execute(params: array of string; var OutputStream: TStream);
   end;
 
   TCustomCommand = class(TInterfacedObject, IExecutableCommand)
@@ -27,7 +27,7 @@ type
     { find the binary }
     function FindBinary(binary : ansistring) : ansistring;
     { execute the command }
-    procedure execute(params: array of string); virtual; abstract;
+    procedure execute(params: array of string; var OutputStream: TStream); virtual; abstract;
     property Binary : ansistring read FBinary;
   end;
 
@@ -41,29 +41,34 @@ type
   TVagrantUpCommand = class(TVagrantCommand)
   {< class to execute 'vagrant up' command }
   public
-    procedure execute(params: array of string); override;
+    procedure execute(params: array of string; var OutputStream: TStream); override;
   end;
 
   TVagrantHaltCommand = class(TVagrantCommand)
   {< class to execute 'vagrant halt' command }
   public
-      procedure execute(params: array of string); override;
+    procedure execute(params: array of string; var OutputStream: TStream); override;
   end;
 
   TVagrantGlobalStatusCommand = class(TVagrantCommand)
   {< class to execute 'vagrant global-status' command }
   public
-      procedure execute(params: array of string); override;
+      procedure execute(params: array of string; var OutputStream: TStream); override;
   end;
 
 
 implementation
+
+uses
+  Process;
 
 const
   FIND_CMD         = {$ifdef unix}'which'{$endif}{$ifdef windows}'where.exe'{$endif};
   VAGRANT_CMD      = {$ifdef unix}'vagrant'{$endif}{$ifdef windows}'vagrant.exe'{$endif};
   VAGRANT_ARG_HALT = 'halt';
   VAGRANT_ARG_UP   = 'up';
+
+  BUFFER_SIZE      = 2048;
 
 function TCustomCommand.FindBinary(binary : ansistring) : ansistring;
 var
@@ -92,23 +97,38 @@ begin
   SetBinary(FindBinary(VAGRANT_CMD));
 end;
 
-procedure TVagrantUpCommand.execute(params: array of string);
+procedure TVagrantUpCommand.execute(params: array of string; var OutputStream: TStream);
 var
-  id     : string;
-  output : string;
+  id           : string;
+  AProcess     : TProcess;
+  BytesRead    : longint;
+  Buffer       : array[1..BUFFER_SIZE] of byte;
 begin
   if -1 = High(params) then
     raise Exception.Create('expected first param to be id of vagrant machine');
   id := params[0];
-  try
-    if not RunCommand(FBinary, [VAGRANT_ARG_UP, id], output) then
-      raise Exception.Create(FBinary + ' ' + VAGRANT_ARG_UP + ' ' + id + ' failed.');
-   except
-     raise;
-   end;
+
+  AProcess := TProcess.Create(nil);
+  AProcess.Options    := [poUsePipes];
+  AProcess.Executable := FBinary;
+  AProcess.Parameters.Add(VAGRANT_ARG_UP);
+  AProcess.Parameters.Add(id);
+
+  AProcess.Execute; // here we go!
+
+  { TODO: convert Buffer into UTF-8 string:
+          str := TEncoding.UTF8.GetString(bytes);
+          call callbackMethod and pass str! }
+  repeat
+    BytesRead := AProcess.Output.Read(Buffer, BUFFER_SIZE);
+    OutputStream.Write(Buffer, BytesRead);
+  until BytesRead = 0;
+
+  AProcess.Free;
+
 end;
 
-procedure TVagrantHaltCommand.execute(params: array of string);
+procedure TVagrantHaltCommand.execute(params: array of string; var OutputStream: TStream);
 var
   id     : string;
   output : string;
@@ -124,7 +144,7 @@ begin
    end;
 end;
 
-procedure TVagrantGlobalStatusCommand.execute(params: array of string);
+procedure TVagrantGlobalStatusCommand.execute(params: array of string; var OutputStream: TStream);
 begin
 
 end;

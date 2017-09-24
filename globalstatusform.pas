@@ -6,7 +6,7 @@ interface
 
 uses
       Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-			ComCtrls, Menus, ExtCtrls, vagrantcli, typinfo;
+			ComCtrls, Menus, ExtCtrls, vagrantcli, vagrantcommands, typinfo;
 
 type
 
@@ -96,15 +96,53 @@ begin
 end;
 
 procedure TFormGlobalStatus.MenuItemHaltClick(Sender: TObject);
+var
+  Output : TStringList;
+  OutputStream: TStream;
+  haltCmd : TVagrantHaltCommand;
 begin
   if not Assigned(ClickedItem) then exit;
-  FVagrantCli.HaltCommand(ClickedItem.Caption);
+
+  VMOutWindow.StatusMemo.Lines.Clear;
+
+  haltCmd      := TVagrantHaltCommand.Create();
+  OutputStream := TMemoryStream.Create;
+  haltCmd.execute([ClickedItem.Caption], OutputStream);
+
+  Output := TStringList.Create;
+  OutputStream.Position := 0;
+  Output.LoadFromStream(OutputStream);
+
+  VMOutWindow.StatusMemo.Lines.AddStrings(Output);
+
+  OutputStream.Free;
+  FreeAndNil(haltCmd);
+
 end;
 
 procedure TFormGlobalStatus.MenuItemUpClick(Sender: TObject);
+var
+  Output : TStringList;
+  OutputStream: TStream;
+  upCmd : TVagrantUpCommand;
 begin
   if not Assigned(ClickedItem) then exit;
-  FVagrantCli.UpCommand(ClickedItem.Caption);
+
+  VMOutWindow.StatusMemo.Lines.Clear;
+
+  upCmd        := TVagrantUpCommand.Create();
+  OutputStream := TMemoryStream.Create;
+  upCmd.execute([ClickedItem.Caption], OutputStream);
+
+  Output := TStringList.Create;
+  OutputStream.Position := 0;
+  Output.LoadFromStream(OutputStream);
+
+  VMOutWindow.StatusMemo.Lines.AddStrings(Output);
+
+  OutputStream.Free;
+  FreeAndNil(upCmd);
+
 end;
 
 { updates the vagrant status every x seconds }

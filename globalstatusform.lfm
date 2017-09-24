@@ -1,7 +1,7 @@
 object FormGlobalStatus: TFormGlobalStatus
-  Left = 2510
+  Left = 480
   Height = 240
-  Top = 197
+  Top = 244
   Width = 723
   ActiveControl = ListViewStatus
   Caption = 'VagrantGUI'

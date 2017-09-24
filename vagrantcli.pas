@@ -6,7 +6,8 @@ unit vagrantcli;
 interface
 
 uses
-  Classes, SysUtils, Process;
+  Classes, SysUtils, Process,
+  Vagrantcommands;
 
 type
 
@@ -60,9 +61,6 @@ type
     procedure FindVagrantBin;
     { wrapper to vagrant global-status }
     function GetGlobalStatus : TFPList;
-
-    function HaltCommand(Id : string) : boolean;
-    function UpCommand(Id : string) : boolean;
 
     { path to where vagrant is installed to }
     property VagrantBin : ansistring read FVagrantBin;
@@ -267,31 +265,6 @@ begin
   WriteLn('GetGlobalStatus: ' + IntToStr(DiffSeconds) + 'ms');
 end;
 
-function TVagrantCLI.HaltCommand(id : string) : boolean;
-var
-  output : string;
-begin
-  try
-    if not RunCommand(VAGRANT_CMD, [ARG_HALT, id], output) then
-     raise Exception.Create(VAGRANT_CMD + ' ' + ARG_HALT + ' ' + id + ' failed.');
-   except
-     raise;
-   end;
-   Result := true;
-end;
-
-function TVagrantCLI.UpCommand(id : string) : boolean;
-var
-  output : string;
-begin
-  try
-    if not RunCommand(VAGRANT_CMD, [ARG_UP, id], output) then
-     raise Exception.Create(VAGRANT_CMD + ' ' + ARG_HALT + ' ' + id + ' failed.');
-   except
-     raise;
-   end;
-   Result := true;
-end;
 
 end.
 

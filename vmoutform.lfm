@@ -1,11 +1,11 @@
 object VMOutWindow: TVMOutWindow
-  Left = 3046
+  Left = 992
   Height = 240
-  Top = 244
-  Width = 320
+  Top = 161
+  Width = 480
   Caption = 'Vagrant Output'
   ClientHeight = 240
-  ClientWidth = 320
+  ClientWidth = 480
   LCLVersion = '1.6.4.0'
   object StatusMemo: TMemo
     AnchorSideLeft.Control = Owner
@@ -17,15 +17,12 @@ object VMOutWindow: TVMOutWindow
     Left = 10
     Height = 220
     Top = 10
-    Width = 300
+    Width = 460
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Left = 10
     BorderSpacing.Top = 10
     BorderSpacing.Right = 10
     BorderSpacing.Bottom = 10
-    Lines.Strings = (
-      'StatusMemo'
-    )
     ReadOnly = True
     ScrollBars = ssAutoBoth
     TabOrder = 0
