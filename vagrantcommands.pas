@@ -16,11 +16,15 @@ type
     procedure execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer);
   end;
 
+  TCustomCommandCallback = procedure(var Output: string) of object;
+
   TCustomCommand = class(TInterfacedObject, IExecutableCommand)
   {< abstract command class which defines some helper functions }
   protected
     { the path to the binary }
     FBinary : ansistring;
+    { method, which gets called during execution }
+    FOnExecute: TCustomCommandCallback;
     { sets the binary path }
     procedure SetBinary(binary : ansistring);
   public
@@ -29,6 +33,7 @@ type
     { execute the command }
     procedure execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer); virtual; abstract;
     property Binary : ansistring read FBinary;
+    property OnExecute: TCustomCommandCallback read FOnExecute write FOnExecute;
   end;
 
   TVagrantCommand = class(TCustomCommand)
