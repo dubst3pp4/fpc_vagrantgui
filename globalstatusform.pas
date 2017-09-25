@@ -100,6 +100,7 @@ var
   Output : TStringList;
   OutputStream: TStream;
   haltCmd : TVagrantHaltCommand;
+  ExitStatus: integer;
 begin
   if not Assigned(ClickedItem) then exit;
 
@@ -107,7 +108,7 @@ begin
 
   haltCmd      := TVagrantHaltCommand.Create();
   OutputStream := TMemoryStream.Create;
-  haltCmd.execute([ClickedItem.Caption], OutputStream);
+  haltCmd.execute([ClickedItem.Caption], OutputStream, ExitStatus);
 
   Output := TStringList.Create;
   OutputStream.Position := 0;
@@ -125,6 +126,7 @@ var
   Output : TStringList;
   OutputStream: TStream;
   upCmd : TVagrantUpCommand;
+  ExitStatus: integer;
 begin
   if not Assigned(ClickedItem) then exit;
 
@@ -132,7 +134,7 @@ begin
 
   upCmd        := TVagrantUpCommand.Create();
   OutputStream := TMemoryStream.Create;
-  upCmd.execute([ClickedItem.Caption], OutputStream);
+  upCmd.execute([ClickedItem.Caption], OutputStream, ExitStatus);
 
   Output := TStringList.Create;
   OutputStream.Position := 0;
