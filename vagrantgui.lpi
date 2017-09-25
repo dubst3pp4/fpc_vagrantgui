@@ -63,7 +63,7 @@
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="vagrantgui"/>
+      <Filename Value="bin/vagrantgui"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
