@@ -48,6 +48,7 @@ type
         FVagrantCli   : TVagrantCLI;
       public
         { public declarations }
+        procedure UpdateStatus(var output: string);
       end;
 
 var
@@ -96,54 +97,20 @@ begin
 end;
 
 procedure TFormGlobalStatus.MenuItemHaltClick(Sender: TObject);
-var
-  Output : TStringList;
-  OutputStream: TStream;
-  haltCmd : TVagrantHaltCommand;
-  ExitStatus: integer;
 begin
   if not Assigned(ClickedItem) then exit;
 
   VMOutWindow.StatusMemo.Lines.Clear;
-
-  haltCmd      := TVagrantHaltCommand.Create();
-  OutputStream := TMemoryStream.Create;
-  haltCmd.execute([ClickedItem.Caption], OutputStream, ExitStatus);
-
-  Output := TStringList.Create;
-  OutputStream.Position := 0;
-  Output.LoadFromStream(OutputStream);
-
-  VMOutWindow.StatusMemo.Lines.AddStrings(Output);
-
-  OutputStream.Free;
-  FreeAndNil(haltCmd);
+  FVagrantCli.HaltCommand(ClickedItem.Caption);
 
 end;
 
 procedure TFormGlobalStatus.MenuItemUpClick(Sender: TObject);
-var
-  Output : TStringList;
-  OutputStream: TStream;
-  upCmd : TVagrantUpCommand;
-  ExitStatus: integer;
 begin
   if not Assigned(ClickedItem) then exit;
 
   VMOutWindow.StatusMemo.Lines.Clear;
-
-  upCmd        := TVagrantUpCommand.Create();
-  OutputStream := TMemoryStream.Create;
-  upCmd.execute([ClickedItem.Caption], OutputStream, ExitStatus);
-
-  Output := TStringList.Create;
-  OutputStream.Position := 0;
-  Output.LoadFromStream(OutputStream);
-
-  VMOutWindow.StatusMemo.Lines.AddStrings(Output);
-
-  OutputStream.Free;
-  FreeAndNil(upCmd);
+  FVagrantCli.UpCommand(ClickedItem.Caption);
 
 end;
 
@@ -224,6 +191,10 @@ begin
 	end;
   StatusBar1.SimpleText := 'Vagrant executable found: ' + FVagrantCli.VagrantBin;
 
+  { events }
+  FVagrantCli.OnUpCommand := @UpdateStatus;
+  FVagrantCli.OnHaltCommand := @UpdateStatus;
+
   { vagrant global-status }
   UpdateListViewStatus;
 
@@ -232,6 +203,12 @@ end;
 procedure TFormGlobalStatus.FormActivate(Sender: TObject);
 begin
   if not VMOutWindow.Showing then VMOutWindow.ShowOnTop();
+end;
+
+procedure TFormGlobalStatus.UpdateStatus(var output: string);
+begin
+  VMOutWindow.StatusMemo.Lines.Add(output);
+  Application.ProcessMessages;
 end;
 
 end.

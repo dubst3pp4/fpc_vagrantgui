@@ -46,11 +46,15 @@ type
     property Directory : string Index 5 read GetField write SetField;
   end;
 
+  TVagrantCLICallback = TCustomCommandCallback;
+
   { the @name represents the vagrant bin and its options,
     at the moment, only global-status is supported }
   TVagrantCLI = class
   protected
     FVagrantBin : ansistring;
+    FOnUpCommand: TVagrantCLICallback;
+    FOnHaltCommand: TVagrantCLICallback;
     procedure Init;
     { parses a line of the vagrant output to a TVagrantReadableOutput }
     function  ProcessOutputLine(Line : string) : TVagrantReadableOutput;
@@ -61,9 +65,13 @@ type
     procedure FindVagrantBin;
     { wrapper to vagrant global-status }
     function GetGlobalStatus : TFPList;
+    function UpCommand(id: string): boolean;
+    function HaltCommand(id: string): boolean;
 
     { path to where vagrant is installed to }
     property VagrantBin : ansistring read FVagrantBin;
+    property OnUpCommand: TVagrantCLICallback read FOnUpCommand write FOnUpCommand;
+    property OnHaltCommand: TVagrantCLICallback read FOnHaltCommand write FOnHaltCommand;
   end;
 
 implementation
@@ -263,6 +271,62 @@ begin
   Result := StatusList;
   DiffSeconds := MilliSecondsBetween(Time2, Time1);
   WriteLn('GetGlobalStatus: ' + IntToStr(DiffSeconds) + 'ms');
+end;
+
+function TVagrantCLI.UpCommand(id: string): boolean;
+var
+  Output : TStringList;
+  OutputStream: TStream;
+  upCmd : TVagrantUpCommand;
+  ExitStatus: integer;
+begin
+
+  upCmd        := TVagrantUpCommand.Create();
+  if Assigned(FOnUpCommand) then
+    upCmd.OnExecute := FOnUpCommand;
+
+  OutputStream := TMemoryStream.Create;
+  upCmd.execute([id], OutputStream, ExitStatus);
+
+  Output := TStringList.Create;
+  OutputStream.Position := 0;
+  Output.LoadFromStream(OutputStream);
+
+  OutputStream.Free;
+  FreeAndNil(upCmd);
+
+  if not (ExitStatus = 0) then
+    Result := false
+  else
+    Result := true;
+end;
+
+function TVagrantCLI.HaltCommand(id: string): boolean;
+var
+  Output : TStringList;
+  OutputStream: TStream;
+  haltCmd : TVagrantHaltCommand;
+  ExitStatus: integer;
+begin
+
+  haltCmd      := TVagrantHaltCommand.Create();
+  if Assigned(FOnHaltCommand) then
+    haltCmd.OnExecute := FOnHaltCommand;
+
+  OutputStream := TMemoryStream.Create;
+  haltCmd.execute([id], OutputStream, ExitStatus);
+
+  Output := TStringList.Create;
+  OutputStream.Position := 0;
+  Output.LoadFromStream(OutputStream);
+
+  OutputStream.Free;
+  FreeAndNil(haltCmd);
+
+  if not (ExitStatus = 0) then
+    Result := false
+  else
+    Result := true;
 end;
 
 

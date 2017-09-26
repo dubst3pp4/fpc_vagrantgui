@@ -105,6 +105,8 @@ var
   AProcess     : TProcess;
   BytesRead    : longint;
   Buffer       : array[1..BUFFER_SIZE] of byte;
+  BufferTmp    : TBytes;
+  str          : string;
 begin
   AProcess := TProcess.Create(nil);
   AProcess.Options    := [poUsePipes];
@@ -116,11 +118,15 @@ begin
 
   AProcess.Execute; // here we go!
 
-  { TODO: convert Buffer into UTF-8 string:
-          str := TEncoding.UTF8.GetString(bytes);
-          call callbackMethod and pass str! }
   repeat
     BytesRead := AProcess.Output.Read(Buffer, BUFFER_SIZE);
+    SetLength(BufferTmp, BytesRead);
+    if Assigned(FOnExecute) then
+    begin
+      Move(Buffer[0], BufferTmp[0], BytesRead);
+      str := TEncoding.UTF8.GetString(BufferTmp);
+      FOnExecute(str);
+    end;
     OutputStream.Write(Buffer, BytesRead);
   until BytesRead = 0;
   ExitStatus := AProcess.ExitStatus;
