@@ -13,7 +13,7 @@ type
   {< Interface for all executable commands }
     ['{0CA93471-2F58-445F-8AA5-26F1604B8F45}']
     { execute the command }
-    procedure execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer);
+    procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
   end;
 
   TCustomCommandCallback = procedure(var Output: string) of object;
@@ -31,7 +31,7 @@ type
     { find the binary }
     function FindBinary(binary : ansistring) : ansistring;
     { execute the command }
-    procedure execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer); virtual; abstract;
+    procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer); virtual;
     property Binary : ansistring read FBinary;
     property OnExecute: TCustomCommandCallback read FOnExecute write FOnExecute;
   end;
@@ -46,19 +46,19 @@ type
   TVagrantUpCommand = class(TVagrantCommand)
   {< class to execute 'vagrant up' command }
   public
-    procedure execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer); override;
+    procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer); override;
   end;
 
   TVagrantHaltCommand = class(TVagrantCommand)
   {< class to execute 'vagrant halt' command }
   public
-    procedure execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer); override;
+    procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer); override;
   end;
 
   TVagrantGlobalStatusCommand = class(TVagrantCommand)
   {< class to execute 'vagrant global-status' command }
   public
-      procedure execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer); override;
+      procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer); override;
   end;
 
 
@@ -96,13 +96,7 @@ begin
   FBinary := binary;
 end;
 
-constructor TVagrantCommand.Create;
-begin
-  inherited;
-  SetBinary(FindBinary(VAGRANT_CMD));
-end;
-
-procedure TVagrantUpCommand.execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer);
+procedure TCustomCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 var
   id           : string;
   AProcess     : TProcess;
@@ -132,7 +126,13 @@ begin
   AProcess.Free;
 end;
 
-procedure TVagrantHaltCommand.execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer);
+constructor TVagrantCommand.Create;
+begin
+  inherited;
+  SetBinary(FindBinary(VAGRANT_CMD));
+end;
+
+procedure TVagrantUpCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 var
   id           : string;
   AProcess     : TProcess;
@@ -162,7 +162,7 @@ begin
   AProcess.Free;
 end;
 
-procedure TVagrantGlobalStatusCommand.execute(params: array of string; var OutputStream: TStream; var ExitStatus: integer);
+procedure TVagrantGlobalStatusCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 begin
 
 end;
