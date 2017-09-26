@@ -98,20 +98,18 @@ end;
 
 procedure TCustomCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 var
-  id           : string;
+  i            : integer;
   AProcess     : TProcess;
   BytesRead    : longint;
   Buffer       : array[1..BUFFER_SIZE] of byte;
 begin
-  if -1 = High(params) then
-    raise Exception.Create('expected first param to be id of vagrant machine');
-  id := params[0];
-
   AProcess := TProcess.Create(nil);
   AProcess.Options    := [poUsePipes];
   AProcess.Executable := FBinary;
-  AProcess.Parameters.Add(VAGRANT_ARG_UP);
-  AProcess.Parameters.Add(id);
+  for i := 0 to Length(params)-1 do
+  begin
+    AProcess.Parameters.Add(params[i]);
+  end;
 
   AProcess.Execute; // here we go!
 
@@ -142,24 +140,20 @@ begin
   if -1 = High(params) then
     raise Exception.Create('expected first param to be id of vagrant machine');
   id := params[0];
+  inherited execute([VAGRANT_ARG_UP, id], OutputStream, ExitStatus);
+end;
 
-  AProcess := TProcess.Create(nil);
-  AProcess.Options    := [poUsePipes];
-  AProcess.Executable := FBinary;
-  AProcess.Parameters.Add(VAGRANT_ARG_HALT);
-  AProcess.Parameters.Add(id);
-
-  AProcess.Execute; // here we go!
-
-  { TODO: convert Buffer into UTF-8 string:
-          str := TEncoding.UTF8.GetString(bytes);
-          call callbackMethod and pass str! }
-  repeat
-    BytesRead := AProcess.Output.Read(Buffer, BUFFER_SIZE);
-    OutputStream.Write(Buffer, BytesRead);
-  until BytesRead = 0;
-  ExitStatus := AProcess.ExitStatus;
-  AProcess.Free;
+procedure TVagrantHaltCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
+var
+  id           : string;
+  AProcess     : TProcess;
+  BytesRead    : longint;
+  Buffer       : array[1..BUFFER_SIZE] of byte;
+begin
+  if -1 = High(params) then
+    raise Exception.Create('expected first param to be id of vagrant machine');
+  id := params[0];
+  inherited execute([VAGRANT_ARG_HALT, id], OutputStream, ExitStatus);
 end;
 
 procedure TVagrantGlobalStatusCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
