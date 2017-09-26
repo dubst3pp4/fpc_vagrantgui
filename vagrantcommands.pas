@@ -133,9 +133,6 @@ end;
 procedure TVagrantUpCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 var
   id           : string;
-  AProcess     : TProcess;
-  BytesRead    : longint;
-  Buffer       : array[1..BUFFER_SIZE] of byte;
 begin
   if -1 = High(params) then
     raise Exception.Create('expected first param to be id of vagrant machine');
@@ -146,9 +143,6 @@ end;
 procedure TVagrantHaltCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 var
   id           : string;
-  AProcess     : TProcess;
-  BytesRead    : longint;
-  Buffer       : array[1..BUFFER_SIZE] of byte;
 begin
   if -1 = High(params) then
     raise Exception.Create('expected first param to be id of vagrant machine');
