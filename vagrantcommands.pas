@@ -72,8 +72,11 @@ const
   VAGRANT_CMD      = {$ifdef unix}'vagrant'{$endif}{$ifdef windows}'vagrant.exe'{$endif};
   VAGRANT_ARG_HALT = 'halt';
   VAGRANT_ARG_UP   = 'up';
-
   BUFFER_SIZE      = 2048;
+
+
+
+{ TCustomCommand}
 
 function TCustomCommand.FindBinary(binary : ansistring) : ansistring;
 var
@@ -124,11 +127,19 @@ begin
   AProcess.Free;
 end;
 
+
+
+{ TVagrantCommand }
+
 constructor TVagrantCommand.Create;
 begin
   inherited;
   SetBinary(FindBinary(VAGRANT_CMD));
 end;
+
+
+
+{ TVagrantUpCommand }
 
 procedure TVagrantUpCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 var
@@ -140,6 +151,10 @@ begin
   inherited execute([VAGRANT_ARG_UP, id], OutputStream, ExitStatus);
 end;
 
+
+
+{ TVagrantHaltCommand }
+
 procedure TVagrantHaltCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 var
   id           : string;
@@ -149,6 +164,10 @@ begin
   id := params[0];
   inherited execute([VAGRANT_ARG_HALT, id], OutputStream, ExitStatus);
 end;
+
+
+
+{ TVagrantGlobalStatusCommand }
 
 procedure TVagrantGlobalStatusCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
 begin
