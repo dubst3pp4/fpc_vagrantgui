@@ -322,4 +322,9 @@ object FormGlobalStatus: TFormGlobalStatus
     left = 72
     top = 208
   end
+  object ApplicationProperties1: TApplicationProperties
+    OnIdle = ApplicationProperties1Idle
+    left = 104
+    top = 208
+  end
 end

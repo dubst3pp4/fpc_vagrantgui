@@ -13,6 +13,7 @@ type
 			{ TFormGlobalStatus }
 
       TFormGlobalStatus = class(TForm)
+        ApplicationProperties1: TApplicationProperties;
 
         ImageListStatus     : TImageList;
 				ListViewStatus      : TListView;
@@ -24,6 +25,8 @@ type
 				StatusBar1          : TStatusBar;
 				TimerStatus         : TTimer;
 
+        procedure ApplicationProperties1Idle(Sender: TObject; var Done: Boolean
+          );
         procedure FormActivate(Sender: TObject);
         procedure FormCreate(Sender: TObject);
         procedure ListViewStatusMouseDown(
@@ -203,6 +206,14 @@ end;
 procedure TFormGlobalStatus.FormActivate(Sender: TObject);
 begin
   if not VMOutWindow.Showing then VMOutWindow.ShowOnTop();
+end;
+
+procedure TFormGlobalStatus.ApplicationProperties1Idle(Sender: TObject;
+  var Done: Boolean);
+begin
+  WriteLn('idle');
+  FVagrantCli.CheckCommandQueue;
+  Done := true;
 end;
 
 procedure TFormGlobalStatus.UpdateStatus(var output: string);
