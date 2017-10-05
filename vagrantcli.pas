@@ -6,7 +6,7 @@ unit vagrantcli;
 interface
 
 uses
-  Classes, SysUtils, Process,
+  Classes, SysUtils, Process, Contnrs,
   Vagrantcommands;
 
 type
@@ -55,6 +55,7 @@ type
     FVagrantBin : ansistring;
     FOnUpCommand: TVagrantCLICallback;
     FOnHaltCommand: TVagrantCLICallback;
+    FCommandQueue: TFPObjectList;
     procedure Init;
     { parses a line of the vagrant output to a TVagrantReadableOutput }
     function  ProcessOutputLine(Line : string) : TVagrantReadableOutput;
@@ -63,10 +64,13 @@ type
     constructor Create;
     { tries to locate the vagrant bin }
     procedure FindVagrantBin;
+
     { wrapper to vagrant global-status }
     function GetGlobalStatus : TFPList;
-    function UpCommand(id: string): boolean;
-    function HaltCommand(id: string): boolean;
+    function UpCommand(id: string): integer;
+    function HaltCommand(id: string): integer;
+
+    procedure CheckCommandQueue;
 
     { path to where vagrant is installed to }
     property VagrantBin : ansistring read FVagrantBin;
@@ -106,6 +110,7 @@ begin
   end;
 end;
 
+
 procedure TVagrantStatus.SetField(Index: Integer; Value: string);
 begin
   Case Index of
@@ -119,16 +124,19 @@ begin
    end;
 end;
 
+
 { TVagrantCLI }
 
 procedure TVagrantCLI.Init;
 begin
   try
+    FCommandQueue := TFPObjectList.Create();
     FindVagrantBin;
   except
     raise;
   end;
 end;
+
 
 function TVagrantCLI.ProcessOutputLine(Line: string) : TVagrantReadableOutput;
 var
@@ -158,6 +166,7 @@ begin
   Result := Output;
 end;
 
+
 constructor TVagrantCLI.Create;
 begin
   try
@@ -166,6 +175,7 @@ begin
     raise;
   end;
 end;
+
 
 procedure TVagrantCLI.FindVagrantBin;
 var
@@ -182,6 +192,7 @@ begin
     raise;
   end;
 end;
+
 
 function TVagrantCLI.GetGlobalStatus: TFPList;
 var
@@ -273,62 +284,55 @@ begin
   WriteLn('GetGlobalStatus: ' + IntToStr(DiffSeconds) + 'ms');
 end;
 
-function TVagrantCLI.UpCommand(id: string): boolean;
+
+function TVagrantCLI.UpCommand(id: string): integer;
 var
-  Output : TStringList;
-  OutputStream: TStream;
   upCmd : TVagrantUpCommand;
-  ExitStatus: integer;
 begin
 
-  upCmd        := TVagrantUpCommand.Create();
-  if Assigned(FOnUpCommand) then
-    upCmd.OnExecute := FOnUpCommand;
+  upCmd := TVagrantUpCommand.Create();
+  Result := FCommandQueue.Add(upCmd);
+  upCmd.execute([id]);
 
-  OutputStream := TMemoryStream.Create;
-  upCmd.execute([id], OutputStream, ExitStatus);
-
-  Output := TStringList.Create;
-  OutputStream.Position := 0;
-  Output.LoadFromStream(OutputStream);
-
-  OutputStream.Free;
-  FreeAndNil(upCmd);
-
-  if not (ExitStatus = 0) then
-    Result := false
-  else
-    Result := true;
 end;
 
-function TVagrantCLI.HaltCommand(id: string): boolean;
+
+function TVagrantCLI.HaltCommand(id: string): integer;
 var
-  Output : TStringList;
-  OutputStream: TStream;
   haltCmd : TVagrantHaltCommand;
-  ExitStatus: integer;
 begin
 
-  haltCmd      := TVagrantHaltCommand.Create();
-  if Assigned(FOnHaltCommand) then
-    haltCmd.OnExecute := FOnHaltCommand;
+  haltCmd := TVagrantHaltCommand.Create();
+  Result := FCommandQueue.Add(haltCmd);
+  haltCmd.execute([id]);
 
-  OutputStream := TMemoryStream.Create;
-  haltCmd.execute([id], OutputStream, ExitStatus);
-
-  Output := TStringList.Create;
-  OutputStream.Position := 0;
-  Output.LoadFromStream(OutputStream);
-
-  OutputStream.Free;
-  FreeAndNil(haltCmd);
-
-  if not (ExitStatus = 0) then
-    Result := false
-  else
-    Result := true;
 end;
 
+
+procedure TVagrantCLI.CheckCommandQueue;
+var
+  QueueLength: integer;
+  i: integer = 0;
+begin
+  QueueLength := FCommandQueue.Count;
+
+  while i < QueueLength do
+  begin
+    with FCommandQueue[i] as TCustomCommand do
+    begin
+      if not IsRunning then
+      begin
+        FCommandQueue.Delete(i);
+        WriteLn(IntToStr(i) + ' deleted.');
+      end else
+      begin
+        WriteLn(IntToStr(i) + ' is already running.');
+      end;
+    end;
+    Inc(i);
+  end;
+
+end;
 
 end.
 
