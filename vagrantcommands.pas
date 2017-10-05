@@ -5,7 +5,7 @@ unit vagrantcommands;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, Process;
 
 type
 
@@ -13,7 +13,7 @@ type
   {< Interface for all executable commands }
     ['{0CA93471-2F58-445F-8AA5-26F1604B8F45}']
     { execute the command }
-    procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
+    procedure execute(params: array of string);
   end;
 
   TCustomCommandCallback = procedure(var Output: string) of object;
@@ -23,6 +23,7 @@ type
   protected
     { the path to the binary }
     FBinary : ansistring;
+    FProcess: TProcess;
     { method, which gets called during execution }
     FOnExecute: TCustomCommandCallback;
     { sets the binary path }
@@ -30,8 +31,9 @@ type
   public
     { find the binary }
     function FindBinary(binary : ansistring) : ansistring;
+    function IsRunning: boolean;
     { execute the command }
-    procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer); virtual;
+    procedure execute(params: array of string); virtual;
     property Binary : ansistring read FBinary;
     property OnExecute: TCustomCommandCallback read FOnExecute write FOnExecute;
   end;
@@ -46,26 +48,23 @@ type
   TVagrantUpCommand = class(TVagrantCommand)
   {< class to execute 'vagrant up' command }
   public
-    procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer); override;
+    procedure execute(params: array of string); override;
   end;
 
   TVagrantHaltCommand = class(TVagrantCommand)
   {< class to execute 'vagrant halt' command }
   public
-    procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer); override;
+    procedure execute(params: array of string); override;
   end;
 
   TVagrantGlobalStatusCommand = class(TVagrantCommand)
   {< class to execute 'vagrant global-status' command }
   public
-      procedure execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer); override;
+      procedure execute(params: array of string); override;
   end;
 
 
 implementation
-
-uses
-  Process;
 
 const
   FIND_CMD         = {$ifdef unix}'which'{$endif}{$ifdef windows}'where.exe'{$endif};
@@ -94,30 +93,38 @@ begin
   end;
 end;
 
+function TCustomCommand.IsRunning: boolean;
+begin
+  if not Assigned(FProcess) then
+    Result := false
+  else
+    Result := FProcess.Running;
+end;
+
 procedure TCustomCommand.SetBinary(binary : ansistring);
 begin
   FBinary := binary;
 end;
 
-procedure TCustomCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
+procedure TCustomCommand.execute(params: array of string);
 var
   i            : integer;
-  AProcess     : TProcess;
   BytesRead    : longint;
   Buffer       : array[1..BUFFER_SIZE] of byte;
   BufferTmp    : TBytes;
   str          : string;
 begin
-  AProcess := TProcess.Create(nil);
-  AProcess.Options    := [poUsePipes];
-  AProcess.Executable := FBinary;
+  FProcess := TProcess.Create(nil);
+  FProcess.Options    := [poUsePipes];
+  FProcess.Executable := FBinary;
   for i := 0 to Length(params)-1 do
   begin
-    AProcess.Parameters.Add(params[i]);
+    FProcess.Parameters.Add(params[i]);
   end;
 
-  AProcess.Execute; // here we go!
+  FProcess.Execute; // here we go!
 
+  {
   repeat
     BytesRead := AProcess.Output.Read(Buffer, BUFFER_SIZE);
     SetLength(BufferTmp, BytesRead);
@@ -131,6 +138,7 @@ begin
   until BytesRead = 0;
   ExitStatus := AProcess.ExitStatus;
   AProcess.Free;
+  }
 end;
 
 
@@ -147,35 +155,35 @@ end;
 
 { TVagrantUpCommand }
 
-procedure TVagrantUpCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
+procedure TVagrantUpCommand.execute(params: array of string);
 var
   id           : string;
 begin
   if -1 = High(params) then
     raise Exception.Create('expected first param to be id of vagrant machine');
   id := params[0];
-  inherited execute([VAGRANT_ARG_UP, id], OutputStream, ExitStatus);
+  inherited execute([VAGRANT_ARG_UP, id]);
 end;
 
 
 
 { TVagrantHaltCommand }
 
-procedure TVagrantHaltCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
+procedure TVagrantHaltCommand.execute(params: array of string);
 var
   id           : string;
 begin
   if -1 = High(params) then
     raise Exception.Create('expected first param to be id of vagrant machine');
   id := params[0];
-  inherited execute([VAGRANT_ARG_HALT, id], OutputStream, ExitStatus);
+  inherited execute([VAGRANT_ARG_HALT, id]);
 end;
 
 
 
 { TVagrantGlobalStatusCommand }
 
-procedure TVagrantGlobalStatusCommand.execute(params: array of string; var OutputStream: TStream; out ExitStatus: integer);
+procedure TVagrantGlobalStatusCommand.execute(params: array of string);
 begin
 
 end;
