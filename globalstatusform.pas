@@ -6,7 +6,7 @@ interface
 
 uses
       Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-			ComCtrls, Menus, ExtCtrls, vagrantcli, vagrantcommands, typinfo;
+			ComCtrls, Menus, ExtCtrls, vagrantcli, typinfo;
 
 type
 
@@ -91,6 +91,7 @@ begin
   end;
 end;
 
+
 procedure TFormGlobalStatus.ListViewStatusSelectItem(Sender: TObject;
   Item: TListItem; Selected: Boolean);
 begin
@@ -99,23 +100,30 @@ begin
   if not Selected then exit;
 end;
 
+
 procedure TFormGlobalStatus.MenuItemHaltClick(Sender: TObject);
 begin
   if not Assigned(ClickedItem) then exit;
 
+  TimerStatus.Enabled := false;
   VMOutWindow.StatusMemo.Lines.Clear;
   FVagrantCli.HaltCommand(ClickedItem.Caption);
+  TimerStatus.Enabled := true;
 
 end;
+
 
 procedure TFormGlobalStatus.MenuItemUpClick(Sender: TObject);
 begin
   if not Assigned(ClickedItem) then exit;
 
+  TimerStatus.Enabled := false;
   VMOutWindow.StatusMemo.Lines.Clear;
   FVagrantCli.UpCommand(ClickedItem.Caption);
+  TimerStatus.Enabled := true;
 
 end;
+
 
 { updates the vagrant status every x seconds }
 procedure TFormGlobalStatus.TimerStatusTimer(Sender: TObject);
@@ -125,6 +133,7 @@ begin
   Application.ProcessMessages;
   //TimerStatus.Enabled := true;
 end;
+
 
 procedure TFormGlobalStatus.UpdateListViewStatus;
 var
@@ -178,6 +187,7 @@ begin
   end;
 end;
 
+
 procedure TFormGlobalStatus.FormCreate(Sender: TObject);
 begin
 
@@ -195,8 +205,7 @@ begin
   StatusBar1.SimpleText := 'Vagrant executable found: ' + FVagrantCli.VagrantBin;
 
   { events }
-  FVagrantCli.OnUpCommand := @UpdateStatus;
-  FVagrantCli.OnHaltCommand := @UpdateStatus;
+  FVagrantCli.OnCheckCommandQueue := @UpdateStatus;
 
   { vagrant global-status }
   UpdateListViewStatus;
@@ -208,17 +217,20 @@ begin
   if not VMOutWindow.Showing then VMOutWindow.ShowOnTop();
 end;
 
+
 procedure TFormGlobalStatus.ApplicationProperties1Idle(Sender: TObject;
   var Done: Boolean);
 begin
-  WriteLn('idle');
   FVagrantCli.CheckCommandQueue;
   Done := true;
 end;
 
+
 procedure TFormGlobalStatus.UpdateStatus(var output: string);
 begin
-  VMOutWindow.StatusMemo.Lines.Add(output);
+  VMOutWindow.StatusMemo.Lines.BeginUpdate;
+  VMOutWindow.StatusMemo.Lines.Append(output);
+  VMOutWindow.StatusMemo.Lines.EndUpdate;
   Application.ProcessMessages;
 end;
 
