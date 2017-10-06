@@ -53,8 +53,7 @@ type
   TVagrantCLI = class
   protected
     FVagrantBin : ansistring;
-    FOnUpCommand: TVagrantCLICallback;
-    FOnHaltCommand: TVagrantCLICallback;
+    FOnCheckCommandQueue: TVagrantCLICallback;
     FCommandQueue: TFPObjectList;
     procedure Init;
     { parses a line of the vagrant output to a TVagrantReadableOutput }
@@ -74,8 +73,7 @@ type
 
     { path to where vagrant is installed to }
     property VagrantBin : ansistring read FVagrantBin;
-    property OnUpCommand: TVagrantCLICallback read FOnUpCommand write FOnUpCommand;
-    property OnHaltCommand: TVagrantCLICallback read FOnHaltCommand write FOnHaltCommand;
+    property OnCheckCommandQueue: TVagrantCLICallback read FOnCheckCommandQueue write FOnCheckCommandQueue;
   end;
 
 implementation
@@ -94,6 +92,8 @@ const
   ARG_GLOBAL_STATUS      = 'global-status';
   ARG_HALT               = 'halt';
   ARG_UP                 = 'up';
+
+  BUFFER_SIZE            = 1024;
 
 { TVagrantStatus }
 
@@ -289,11 +289,10 @@ function TVagrantCLI.UpCommand(id: string): integer;
 var
   upCmd : TVagrantUpCommand;
 begin
-
   upCmd := TVagrantUpCommand.Create();
-  Result := FCommandQueue.Add(upCmd);
+  FCommandQueue.Add(upCmd);
   upCmd.execute([id]);
-
+  Result := upCmd.getProcessID;
 end;
 
 
@@ -301,11 +300,10 @@ function TVagrantCLI.HaltCommand(id: string): integer;
 var
   haltCmd : TVagrantHaltCommand;
 begin
-
   haltCmd := TVagrantHaltCommand.Create();
-  Result := FCommandQueue.Add(haltCmd);
+  FCommandQueue.Add(haltCmd);
   haltCmd.execute([id]);
-
+  Result := haltCmd.getProcessID;
 end;
 
 
@@ -313,6 +311,9 @@ procedure TVagrantCLI.CheckCommandQueue;
 var
   QueueLength: integer;
   i: integer = 0;
+  Output: TStream;
+  OutputString: string;
+  BytesRead: integer;
 begin
   QueueLength := FCommandQueue.Count;
 
@@ -322,11 +323,26 @@ begin
     begin
       if not IsRunning then
       begin
+        { delete command from queue }
         FCommandQueue.Delete(i);
         WriteLn(IntToStr(i) + ' deleted.');
       end else
       begin
-        WriteLn(IntToStr(i) + ' is already running.');
+        WriteLn(IntToStr(i) + ' is running.');
+        { if callback was defined }
+        if Assigned(FOnCheckCommandQueue) then
+        begin
+          Output := GetOutput();
+          if not Assigned(Output) then exit;
+          SetLength(OutputString, BUFFER_SIZE);
+          BytesRead := Output.Read(OutputString[1], Length(OutputString));
+          WriteLn('read ' + IntToStr(BytesRead) + ' bytes');
+          if BytesRead > 0 then
+          begin
+            SetLength(OutputString, BytesRead);
+            FonCheckCommandQueue(OutputString);
+          end;
+        end;
       end;
     end;
     Inc(i);
