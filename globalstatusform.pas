@@ -144,6 +144,7 @@ var
   ItemFound    : boolean;
 begin
   StatusList := FVagrantCli.GetGlobalStatus;
+  ListViewStatus.Items.BeginUpdate;
 
   // for StatusItemP in StatusList do
   for i := 0 to StatusList.Count-1 do
@@ -183,8 +184,9 @@ begin
       'saved'               : ListViewItem.ImageIndex := 2;
 		end;
 
-    ListViewStatus.Repaint;
+    //ListViewStatus.Repaint;
   end;
+  ListViewStatus.Items.EndUpdate;
 end;
 
 
